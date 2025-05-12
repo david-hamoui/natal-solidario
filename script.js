@@ -9,7 +9,7 @@ navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
     video.srcObject = stream;
   })
   .catch(err => {
-    alert('Camera access denied or unavailable.');
+    alert('Algo deu errado, por favor recarregue a página.');
     console.error(err);
   });
 
