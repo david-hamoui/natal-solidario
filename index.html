@@ -94,7 +94,7 @@
         body: JSON.stringify({ image: base64Image })
       });
 
-      const result = await response.json();
+      const result = await response;
       console.log("Raw AI response:", result);
       let parsed = result;
 
