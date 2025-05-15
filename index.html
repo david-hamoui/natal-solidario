@@ -26,14 +26,28 @@
     canvas.height = a4HeightPx;
 
     // Start webcam
-    navigator.mediaDevices.getUserMedia({ video: true })
-      .then(stream => {
-        video.srcObject = stream;
-      })
-      .catch(err => {
-        console.error('Error accessing webcam:', err);
-        resultDiv.textContent = 'Erro ao acessar a webcam: ' + err.message;
-      });
+    navigator.mediaDevices.getUserMedia({
+    video: { facingMode: { exact: "environment" } }
+    })
+    .then(stream => {
+      video.srcObject = stream;
+    })
+    .catch(err => {
+      if (err.name === "OverconstrainedError" || err.name === "NotFoundError") {
+        return navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "environment" }
+        });
+      }
+      throw err;
+    })
+    .then(stream => {
+      video.srcObject = stream;
+    })
+    .catch(err => {
+      console.error('Error accessing rear camera:', err);
+      resultDiv.textContent = 'Erro ao acessar a câmera traseira: ' + err.message;
+    });
+
 
     document.getElementById('snap').addEventListener('click', async () => {
       // Calculate scaling to fit video into A4 canvas while preserving aspect ratio
