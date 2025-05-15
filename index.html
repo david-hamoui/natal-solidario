@@ -101,11 +101,9 @@
         let cleaned = parsed.trim();
         
         //slicing the start and finish for ''''''
-        if (cleaned.startsWith("```") && cleaned.endsWith("```")) {
-          cleaned = cleaned.slice(3, -3).trim();
-        }
+        cleaned = cleaned.replace(/^(```|''')/, '').replace(/(```|''')$/, '').trim();
         
-
+        console.log("Raw AI response:", result);
         const match = cleaned.match(/\{[\s\S]*\}/);
         if (match) cleaned = match[0];
 
