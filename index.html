@@ -8,10 +8,13 @@
   <video id="video" width="320" height="240" autoplay></video>
   <button id="snap">CAPTURAR</button>
   <canvas id="canvas" width="320" height="240" style="display:none;"></canvas>
+  <div id="result" style="margin-top: 20px; white-space: pre-wrap;"></div>
+
   <script>
     const video = document.getElementById('video');
     const canvas = document.getElementById('canvas');
     const context = canvas.getContext('2d');
+    const resultDiv = document.getElementById('result');
 
     navigator.mediaDevices.getUserMedia({ video: true }).then((stream) => {
       video.srcObject = stream;
@@ -21,14 +24,18 @@
       context.drawImage(video, 0, 0, 320, 240);
       const base64Image = canvas.toDataURL('image/jpeg').split(',')[1]; // remove header
 
-      const response = await fetch('https://your-backend-url.com/analyze', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image: base64Image })
-      });
+      try {
+        const response = await fetch('https://your-render-app.onrender.com/analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ image: base64Image })
+        });
 
-      const result = await response.json();
-      alert(result.message || JSON.stringify(result));
+        const result = await response.json();
+        resultDiv.textContent = result.message || JSON.stringify(result);
+      } catch (err) {
+        resultDiv.textContent = "Error: " + err.message;
+      }
     });
   </script>
 </body>
