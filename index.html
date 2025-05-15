@@ -5,36 +5,63 @@
 </head>
 <body>
   <h1>Tirar a foto</h1>
-  <video id="video" width="320" height="240" autoplay></video>
+  <video id="video" width="320" height="240" autoplay playsinline></video>
   <button id="snap">CAPTURAR</button>
-  <canvas id="canvas" width="297" height="420" style="display:none;"></canvas>
-  <div id="result" style="margin-top: 20px; white-space: pre-wrap;"></div>
+  <canvas id="canvas" style="display:none;"></canvas>
+  <div id="result" style="margin-top: 20px;"></div>
 
   <script>
     const video = document.getElementById('video');
     const canvas = document.getElementById('canvas');
-    const context = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d');
     const resultDiv = document.getElementById('result');
 
-    // Set A4 size in pixels (width x height)
-    const a4Width = 297;
-    const a4Height = 420;
-    canvas.width = a4Width;
-    canvas.height = a4Height;
+    // A4 size at 150 dpi for decent resolution (adjust as needed)
+    const dpi = 150;
+    const mmToInch = 0.0393701;
+    const a4WidthPx = Math.round(210 * mmToInch * dpi);  // 210mm width in pixels
+    const a4HeightPx = Math.round(297 * mmToInch * dpi); // 297mm height in pixels
 
-    // Start webcam video stream
-    navigator.mediaDevices.getUserMedia({ video: true }).then((stream) => {
-      video.srcObject = stream;
-    }).catch(err => {
-      console.error("Error accessing webcam: ", err);
-      resultDiv.textContent = "Erro ao acessar a webcam: " + err.message;
-    });
+    canvas.width = a4WidthPx;
+    canvas.height = a4HeightPx;
+
+    // Start webcam
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then(stream => {
+        video.srcObject = stream;
+      })
+      .catch(err => {
+        console.error('Error accessing webcam:', err);
+        resultDiv.textContent = 'Erro ao acessar a webcam: ' + err.message;
+      });
 
     document.getElementById('snap').addEventListener('click', async () => {
-      // Draw the video frame scaled to fill the A4 canvas exactly
-      context.drawImage(video, 0, 0, a4Width, a4Height);
+      // Calculate scaling to fit video into A4 canvas while preserving aspect ratio
+      const videoRatio = video.videoWidth / video.videoHeight;
+      const canvasRatio = canvas.width / canvas.height;
 
-      // Convert canvas to base64 jpeg data (without prefix)
+      let drawWidth, drawHeight, offsetX, offsetY;
+
+      if (videoRatio > canvasRatio) {
+        // Video is wider relative to canvas
+        drawWidth = canvas.width;
+        drawHeight = canvas.width / videoRatio;
+        offsetX = 0;
+        offsetY = (canvas.height - drawHeight) / 2;
+      } else {
+        // Video is taller relative to canvas
+        drawHeight = canvas.height;
+        drawWidth = canvas.height * videoRatio;
+        offsetX = (canvas.width - drawWidth) / 2;
+        offsetY = 0;
+      }
+
+      // Clear canvas
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      // Draw the video frame centered and scaled
+      ctx.drawImage(video, offsetX, offsetY, drawWidth, drawHeight);
+
+      // Convert canvas to base64 jpeg data without prefix
       const base64Image = canvas.toDataURL('image/jpeg').split(',')[1];
 
       try {
@@ -46,31 +73,28 @@
 
         const result = await response.json();
 
-        // Display the JSON result formatted
-        if(result.message) {
-          try {
-            const parsed = JSON.parse(result.message);
-            // Create editable fields for each key
-            resultDiv.innerHTML = '';
-            for(const key in parsed) {
-              const label = document.createElement('label');
-              label.textContent = key + ': ';
-              const input = document.createElement('input');
-              input.type = 'text';
-              input.value = parsed[key] === null ? '' : parsed[key];
-              input.id = key;
-              resultDiv.appendChild(label);
-              resultDiv.appendChild(input);
-              resultDiv.appendChild(document.createElement('br'));
-            }
-          } catch {
-            resultDiv.textContent = result.message;
+        // Clear previous results
+        resultDiv.innerHTML = '';
+
+        // If result is JSON with expected keys, show inputs
+        if (result && typeof result === 'object') {
+          for (const key in result) {
+            const label = document.createElement('label');
+            label.textContent = key + ': ';
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = result[key] === null ? '' : result[key];
+            input.id = key;
+            label.htmlFor = key;
+            resultDiv.appendChild(label);
+            resultDiv.appendChild(input);
+            resultDiv.appendChild(document.createElement('br'));
           }
         } else {
           resultDiv.textContent = JSON.stringify(result, null, 2);
         }
       } catch (err) {
-        resultDiv.textContent = "Erro: " + err.message;
+        resultDiv.textContent = 'Erro: ' + err.message;
       }
     });
   </script>
