@@ -94,7 +94,7 @@
         body: JSON.stringify({ image: base64Image })
       });
 
-      const result = await response;
+      const result = await response.text();
       console.log("Raw AI response:", result);
       let parsed = result;
 
@@ -102,12 +102,12 @@
         let cleaned = parsed.trim();
         
         //slicing the start and finish for ''''''
-        if (cleaned.startsWith("```json")) {
-          cleaned = cleaned.replace(/^```json/, '').replace(/```$/, '').trim();
-        } else if (cleaned.startsWith("```")) {
+        if (cleaned.startsWith("```")) {
           cleaned = cleaned.slice(3, -3).trim();
         }
         
+        cleaned = cleaned.json();
+
         const match = cleaned.match(/\{[\s\S]*\}/);
         if (match) cleaned = match[0];
 
