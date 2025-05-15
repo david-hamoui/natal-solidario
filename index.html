@@ -97,26 +97,26 @@
       const result = await response.json();
       let parsed = result;
 
-        if (typeof parsed === 'string') {
-          let cleaned = parsed.trim();
+      if (typeof parsed === 'string') {
+        let cleaned = parsed.trim();
 
-          if (cleaned.startsWith("'''") && cleaned.endsWith("'''")) {
-            cleaned = cleaned.slice(3, -3).trim();
-          }
+        if (cleaned.startsWith("'''") && cleaned.endsWith("'''")) {
+          cleaned = cleaned.slice(3, -3).trim();
+        }
 
-          const match = cleaned.match(/\{[\s\S]*\}/);
-          if (match) cleaned = match[0];
+        const match = cleaned.match(/\{[\s\S]*\}/);
+        if (match) cleaned = match[0];
 
-          cleaned = cleaned.replace(/\\n|[\n\r]/g, ' ');
+        cleaned = cleaned.replace(/\\n|[\n\r]/g, ' ');
 
-          try {
-            parsed = JSON.parse(cleaned);
-          } catch (e) {
-            resultDiv.textContent = 'Erro ao interpretar a resposta: ' + e.message;
-            return;
-          }
+        try {
+          parsed = JSON.parse(cleaned);
+        } catch (e) {
+          resultDiv.textContent = 'Erro ao interpretar a resposta: ' + e.message;
+          return;
         }
       }
+      
 
       for (const key in parsed) {
         const label = document.createElement('label');
