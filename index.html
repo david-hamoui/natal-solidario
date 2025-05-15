@@ -1,15 +1,14 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Doc</title>
+  <title>Doc - Capture A4 Photo</title>
 </head>
 <body>
   <h1>Tirar a foto</h1>
-  <video id="video" width="297" height="420" autoplay></video>
+  <video id="video" width="320" height="240" autoplay></video>
   <button id="snap">CAPTURAR</button>
   <canvas id="canvas" width="297" height="420" style="display:none;"></canvas>
-  
-  <div id="result" style="margin-top: 20px;"></div>
+  <div id="result" style="margin-top: 20px; white-space: pre-wrap;"></div>
 
   <script>
     const video = document.getElementById('video');
@@ -17,29 +16,26 @@
     const context = canvas.getContext('2d');
     const resultDiv = document.getElementById('result');
 
+    // Set A4 size in pixels (width x height)
+    const a4Width = 297;
+    const a4Height = 420;
+    canvas.width = a4Width;
+    canvas.height = a4Height;
+
+    // Start webcam video stream
     navigator.mediaDevices.getUserMedia({ video: true }).then((stream) => {
       video.srcObject = stream;
+    }).catch(err => {
+      console.error("Error accessing webcam: ", err);
+      resultDiv.textContent = "Erro ao acessar a webcam: " + err.message;
     });
 
-    // Helper to create labeled input fields
-    function createInputField(labelText, id, value) {
-      const container = document.createElement('div');
-      const label = document.createElement('label');
-      label.for = id;
-      label.textContent = labelText + ": ";
-      const input = document.createElement('input');
-      input.type = 'text';
-      input.id = id;
-      input.name = id;
-      input.value = value || '';
-      container.appendChild(label);
-      container.appendChild(input);
-      return container;
-    }
-
     document.getElementById('snap').addEventListener('click', async () => {
-      context.drawImage(video, 0, 0, 297, 420);
-      const base64Image = canvas.toDataURL('image/jpeg').split(',')[1]; // remove header
+      // Draw the video frame scaled to fill the A4 canvas exactly
+      context.drawImage(video, 0, 0, a4Width, a4Height);
+
+      // Convert canvas to base64 jpeg data (without prefix)
+      const base64Image = canvas.toDataURL('image/jpeg').split(',')[1];
 
       try {
         const response = await fetch('https://backend-natal-solidario.onrender.com/analyze', {
@@ -50,43 +46,31 @@
 
         const result = await response.json();
 
-        // Clear previous result
-        resultDiv.innerHTML = '';
-
-        // Check if response is error or raw
-        if (result.error) {
-          resultDiv.textContent = "Error: " + result.error;
-          return;
+        // Display the JSON result formatted
+        if(result.message) {
+          try {
+            const parsed = JSON.parse(result.message);
+            // Create editable fields for each key
+            resultDiv.innerHTML = '';
+            for(const key in parsed) {
+              const label = document.createElement('label');
+              label.textContent = key + ': ';
+              const input = document.createElement('input');
+              input.type = 'text';
+              input.value = parsed[key] === null ? '' : parsed[key];
+              input.id = key;
+              resultDiv.appendChild(label);
+              resultDiv.appendChild(input);
+              resultDiv.appendChild(document.createElement('br'));
+            }
+          } catch {
+            resultDiv.textContent = result.message;
+          }
+        } else {
+          resultDiv.textContent = JSON.stringify(result, null, 2);
         }
-
-        // Use the JSON keys you expect (adapt if your backend keys differ)
-        const fields = ['nome', 'idade', 'sexo', 'legal_ano', 'presente', 'tamanho'];
-
-        // Create form dynamically
-        const form = document.createElement('form');
-        fields.forEach(field => {
-          const inputField = createInputField(field, field, result[field]);
-          form.appendChild(inputField);
-        });
-
-        // Optionally add a submit button (you can handle saving or further processing)
-        const submitBtn = document.createElement('button');
-        submitBtn.type = 'button';
-        submitBtn.textContent = 'Salvar';
-        submitBtn.onclick = () => {
-          // Collect form data and do something with it (e.g., send to backend or just log)
-          const formData = {};
-          fields.forEach(field => {
-            formData[field] = form.querySelector(`#${field}`).value;
-          });
-          alert('Dados salvos:\n' + JSON.stringify(formData, null, 2));
-        };
-        form.appendChild(submitBtn);
-
-        resultDiv.appendChild(form);
-
       } catch (err) {
-        resultDiv.textContent = "Error: " + err.message;
+        resultDiv.textContent = "Erro: " + err.message;
       }
     });
   </script>
