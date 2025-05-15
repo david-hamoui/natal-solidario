@@ -1,49 +1,22 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <title>Doc - Capture A4 Photo</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 20px;
-    }
-    label {
-      font-weight: bold;
-      margin-top: 10px;
-      display: inline-block;
-      width: 100px;
-    }
-    input {
-      margin-bottom: 10px;
-      width: 200px;
-      padding: 5px;
-    }
-    #result {
-      margin-top: 20px;
-      white-space: normal;
-    }
-  </style>
 </head>
 <body>
   <h1>Tirar a foto</h1>
   <video id="video" width="320" height="240" autoplay playsinline></video>
-  <br />
-  <button id="start-camera">Iniciar câmera</button>
-  <button id="snap" disabled>CAPTURAR</button>
+  <button id="snap">CAPTURAR</button>
   <canvas id="canvas" style="display:none;"></canvas>
-  <div id="result"></div>
+  <div id="result" style="margin-top: 20px;"></div>
 
   <script>
     const video = document.getElementById('video');
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
     const resultDiv = document.getElementById('result');
-    const startBtn = document.getElementById('start-camera');
-    const snapBtn = document.getElementById('snap');
 
-    // A4 size at 150 dpi (adjust dpi if needed)
+    // A4 size at 150 dpi
     const dpi = 150;
     const mmToInch = 0.0393701;
     const a4WidthPx = Math.round(210 * mmToInch * dpi);
@@ -52,49 +25,24 @@
     canvas.width = a4WidthPx;
     canvas.height = a4HeightPx;
 
-    let stream;
+    // Try rear camera, fallback if unavailable
+    navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { exact: "environment" } }
+    }).then(stream => {
+      video.srcObject = stream;
+    }).catch(() => {
+      return navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "environment" }
+      });
+    }).then(stream => {
+      video.srcObject = stream;
+    }).catch(err => {
+      console.error('Erro ao acessar a câmera traseira:', err);
+      resultDiv.textContent = 'Erro ao acessar a câmera traseira: ' + err.message;
+    });
 
-    async function startCamera() {
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: { exact: "environment" } },
-          audio: false
-        });
-        video.srcObject = stream;
-        snapBtn.disabled = false;
-        startBtn.disabled = true;
-      } catch (err) {
-        // Fallback if exact facingMode fails
-        try {
-          stream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: "environment" },
-            audio: false
-          });
-          video.srcObject = stream;
-          snapBtn.disabled = false;
-          startBtn.disabled = true;
-        } catch (err2) {
-          console.error('Erro ao acessar a câmera traseira:', err2);
-          resultDiv.textContent = 'Erro ao acessar a câmera traseira: ' + err2.message;
-        }
-      }
-    }
-
-    startBtn.addEventListener('click', startCamera);
-
-    snapBtn.addEventListener('click', async () => {
-      if (!stream) {
-        resultDiv.textContent = 'Câmera não iniciada.';
-        return;
-      }
-
-      // Wait for video metadata to load for dimensions
-      if (video.videoWidth === 0 || video.videoHeight === 0) {
-        resultDiv.textContent = 'Aguardando a câmera iniciar...';
-        return;
-      }
-
-      // Calculate aspect ratios
+    document.getElementById('snap').addEventListener('click', async () => {
+      // Center image on A4 canvas
       const videoRatio = video.videoWidth / video.videoHeight;
       const canvasRatio = canvas.width / canvas.height;
 
@@ -118,8 +66,6 @@
       const base64Image = canvas.toDataURL('image/jpeg').split(',')[1];
 
       try {
-        resultDiv.textContent = 'Enviando imagem para análise...';
-
         const response = await fetch('https://backend-natal-solidario.onrender.com/analyze', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -130,24 +76,43 @@
 
         resultDiv.innerHTML = '';
 
-        if (result && typeof result === 'object') {
-          for (const key in result) {
-            const label = document.createElement('label');
-            label.textContent = key + ': ';
-            label.htmlFor = key;
+        // If the result is an object (not plain text), show input fields
+        let parsed = result;
 
-            const input = document.createElement('input');
-            input.type = 'text';
-            input.id = key;
-            input.value = result[key] === null ? '' : result[key];
+        // If Gemini returns a single string instead of a parsed object
+        if (typeof result === 'string') {
+          let cleaned = result.trim();
 
-            resultDiv.appendChild(label);
-            resultDiv.appendChild(input);
-            resultDiv.appendChild(document.createElement('br'));
+          // Attempt to extract JSON-like content
+          const match = cleaned.match(/\{[\s\S]*\}/);
+          if (match) {
+            cleaned = match[0];
           }
-        } else {
-          resultDiv.textContent = JSON.stringify(result, null, 2);
+
+          // Replace \n with a space (important for malformed JSON)
+          cleaned = cleaned.replace(/\\n|[\n\r]/g, ' ');
+
+          try {
+            parsed = JSON.parse(cleaned);
+          } catch (e) {
+            resultDiv.textContent = 'Erro ao interpretar a resposta: ' + e.message;
+            return;
+          }
         }
+
+        for (const key in parsed) {
+          const label = document.createElement('label');
+          label.textContent = key + ': ';
+          const input = document.createElement('input');
+          input.type = 'text';
+          input.value = (parsed[key] === null || parsed[key] === "null") ? '' : String(parsed[key]).replace(/\n/g, ' ');
+          input.id = key;
+          label.htmlFor = key;
+          resultDiv.appendChild(label);
+          resultDiv.appendChild(input);
+          resultDiv.appendChild(document.createElement('br'));
+        }
+
       } catch (err) {
         resultDiv.textContent = 'Erro: ' + err.message;
       }
