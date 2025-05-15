@@ -1,20 +1,46 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <title>Doc - Capture A4 Photo</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    label {
+      font-weight: bold;
+      margin-top: 10px;
+      display: inline-block;
+      width: 100px;
+    }
+    input {
+      margin-bottom: 10px;
+      width: 200px;
+      padding: 5px;
+    }
+    #result {
+      margin-top: 20px;
+      white-space: normal;
+    }
+  </style>
 </head>
 <body>
   <h1>Tirar a foto</h1>
   <video id="video" width="320" height="240" autoplay playsinline></video>
-  <button id="snap">CAPTURAR</button>
+  <br />
+  <button id="start-camera">Iniciar câmera</button>
+  <button id="snap" disabled>CAPTURAR</button>
   <canvas id="canvas" style="display:none;"></canvas>
-  <div id="result" style="margin-top: 20px;"></div>
-
+  <div id="result"></div>
   <script>
     const video = document.getElementById('video');
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
     const resultDiv = document.getElementById('result');
+    const startBtn = document.getElementById('start-camera');
+    const snapBtn = document.getElementById('snap');
 
     // A4 size at 150 dpi
     const dpi = 150;
