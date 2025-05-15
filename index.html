@@ -12,6 +12,7 @@
   <button id="snap" style="display:none;">Capturar</button>
 
   <canvas id="canvas" style="display:none;"></canvas>
+  <div id="loading" style="display: none; color: blue; font-weight: bold; font-size: 18px;">Processando a imagem, aguarde até 1 minuto...</div>
   <div id="result" style="margin-top: 20px;"></div>
 
   <script>
@@ -59,73 +60,77 @@
       }
     });
 
-    snapButton.addEventListener('click', async () => {
-      const videoRatio = video.videoWidth / video.videoHeight;
-      const canvasRatio = canvas.width / canvas.height;
+  snapButton.addEventListener('click', async () => {
+    const loadingDiv = document.getElementById('loading');
+    resultDiv.innerHTML = '';
+    loadingDiv.style.display = 'block';
 
-      let drawWidth, drawHeight, offsetX, offsetY;
+    const videoRatio = video.videoWidth / video.videoHeight;
+    const canvasRatio = canvas.width / canvas.height;
 
-      if (videoRatio > canvasRatio) {
-        drawWidth = canvas.width;
-        drawHeight = canvas.width / videoRatio;
-        offsetX = 0;
-        offsetY = (canvas.height - drawHeight) / 2;
-      } else {
-        drawHeight = canvas.height;
-        drawWidth = canvas.height * videoRatio;
-        offsetX = (canvas.width - drawWidth) / 2;
-        offsetY = 0;
+    let drawWidth, drawHeight, offsetX, offsetY;
+
+    if (videoRatio > canvasRatio) {
+      drawWidth = canvas.width;
+      drawHeight = canvas.width / videoRatio;
+      offsetX = 0;
+      offsetY = (canvas.height - drawHeight) / 2;
+    } else {
+      drawHeight = canvas.height;
+      drawWidth = canvas.height * videoRatio;
+      offsetX = (canvas.width - drawWidth) / 2;
+      offsetY = 0;
+    }
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(video, offsetX, offsetY, drawWidth, drawHeight);
+
+    const base64Image = canvas.toDataURL('image/jpeg').split(',')[1];
+
+    try {
+      const response = await fetch('https://backend-natal-solidario.onrender.com/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: base64Image })
+      });
+
+      const result = await response.json();
+      let parsed = result;
+
+      // Handle response as string or object
+      if (typeof parsed === 'string') {
+        let cleaned = parsed.trim();
+        const match = cleaned.match(/\{[\s\S]*\}/);
+        if (match) cleaned = match[0];
+        cleaned = cleaned.replace(/\\n|[\n\r]/g, ' ');
+        try {
+          parsed = JSON.parse(cleaned);
+        } catch (e) {
+          resultDiv.textContent = 'Erro ao interpretar a resposta: ' + e.message;
+          return;
+        }
       }
 
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(video, offsetX, offsetY, drawWidth, drawHeight);
+      for (const key in parsed) {
+        const label = document.createElement('label');
+        label.textContent = key + ': ';
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.id = key;
+        input.value = (parsed[key] === null || parsed[key] === "null") ? '' : String(parsed[key]).replace(/\n/g, ' ');
+        label.htmlFor = key;
 
-      const base64Image = canvas.toDataURL('image/jpeg').split(',')[1];
-
-      try {
-        const response = await fetch('https://backend-natal-solidario.onrender.com/analyze', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ image: base64Image })
-        });
-
-        const result = await response.json();
-        resultDiv.innerHTML = '';
-
-        let parsed = result;
-
-        // Handle response as string or object
-        if (typeof parsed === 'string') {
-          let cleaned = parsed.trim();
-          const match = cleaned.match(/\{[\s\S]*\}/);
-          if (match) cleaned = match[0];
-          cleaned = cleaned.replace(/\\n|[\n\r]/g, ' ');
-          try {
-            parsed = JSON.parse(cleaned);
-          } catch (e) {
-            resultDiv.textContent = 'Erro ao interpretar a resposta: ' + e.message;
-            return;
-          }
-        }
-
-        for (const key in parsed) {
-          const label = document.createElement('label');
-          label.textContent = key + ': ';
-          const input = document.createElement('input');
-          input.type = 'text';
-          input.id = key;
-          input.value = (parsed[key] === null || parsed[key] === "null") ? '' : String(parsed[key]).replace(/\n/g, ' ');
-          label.htmlFor = key;
-
-          resultDiv.appendChild(label);
-          resultDiv.appendChild(input);
-          resultDiv.appendChild(document.createElement('br'));
-        }
-
-      } catch (err) {
-        resultDiv.textContent = 'Erro: ' + err.message;
+        resultDiv.appendChild(label);
+        resultDiv.appendChild(input);
+        resultDiv.appendChild(document.createElement('br'));
       }
-    });
+
+    } catch (err) {
+      resultDiv.textContent = 'Erro: ' + err.message;
+    } finally {
+      loadingDiv.style.display = 'none';
+    }
+  });
   </script>
 </body>
 </html>
