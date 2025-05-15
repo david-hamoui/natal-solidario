@@ -95,6 +95,7 @@
       });
 
       const result = await response.json();
+      console.log("Raw AI response:", result);
       let parsed = result;
 
       if (typeof parsed === 'string') {
@@ -103,7 +104,6 @@
         //slicing the start and finish for ''''''
         cleaned = cleaned.replace(/^(```|''')/, '').replace(/(```|''')$/, '').trim();
         
-        console.log("Raw AI response:", result);
         const match = cleaned.match(/\{[\s\S]*\}/);
         if (match) cleaned = match[0];
 
