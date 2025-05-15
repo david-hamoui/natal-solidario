@@ -102,7 +102,11 @@
         let cleaned = parsed.trim();
         
         //slicing the start and finish for ''''''
-        cleaned = cleaned.replace(/^(```|''')/, '').replace(/(```|''')$/, '').trim();
+        if (cleaned.startsWith("```json")) {
+          cleaned = cleaned.replace(/^```json/, '').replace(/```$/, '').trim();
+        } else if (cleaned.startsWith("```")) {
+          cleaned = cleaned.slice(3, -3).trim();
+        }
         
         const match = cleaned.match(/\{[\s\S]*\}/);
         if (match) cleaned = match[0];
