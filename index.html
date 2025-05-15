@@ -95,16 +95,24 @@
       });
 
       const result = await response.text();
-      console.log("Raw AI response:", result);
-      let parsed = result;
+      const jsonResult = JSON.parse(result);
+      console.log('Parsed JSON (jsonResult):', jsonResult);
+      console.log("Raw AI response (result):", result);
+      
+      //let parsed = result;
 
       if (typeof parsed === 'string') {
-        let cleaned = parsed.trim();
+        let cleaned = jsonResult.raw || '';
+
+        cleaned = cleaned.trim();
         
-        //slicing the start and finish for ''''''
-        if (cleaned.startsWith("```")) {
+        if (cleaned.startsWith('```json')) {
+          cleaned = cleaned.replace(/^```json/, '').replace(/```$/, '').trim();
+        } else if (cleaned.startsWith('```')) {
           cleaned = cleaned.slice(3, -3).trim();
         }
+
+        cleaned = cleaned.replace(/\\n|[\n\r]/g, ' ');
         
         cleaned = cleaned.json();
 
