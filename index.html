@@ -119,6 +119,7 @@
       const base64Image = canvas.toDataURL('image/jpeg').split(',')[1];
 
       try {
+        resultDiv.textContent = 'Enviando imagem para análise...';
         const response = await fetch('https://backend-natal-solidario.onrender.com/analyze', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
