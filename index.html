@@ -1,48 +1,27 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <title>Doc - Capture A4 Photo</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 20px;
-    }
-    label {
-      font-weight: bold;
-      margin-top: 10px;
-      display: inline-block;
-      width: 100px;
-    }
-    input {
-      margin-bottom: 10px;
-      width: 200px;
-      padding: 5px;
-    }
-    #result {
-      margin-top: 20px;
-      white-space: normal;
-    }
-  </style>
+  <meta charset="UTF-8">
+  <title>Doc - Captura de Foto A4</title>
 </head>
 <body>
-  <h1>Tirar a foto</h1>
-  <video id="video" width="320" height="240" autoplay playsinline></video>
-  <br />
-  <button id="start-camera">Iniciar câmera</button>
-  <button id="snap" disabled>CAPTURAR</button>
+  <h1>Captura de Foto</h1>
+
+  <button id="start-camera">Ativar Câmera</button>
+  <video id="video" width="320" height="240" autoplay playsinline style="display:none;"></video>
+  <button id="snap" style="display:none;">Capturar</button>
+
   <canvas id="canvas" style="display:none;"></canvas>
-  <div id="result"></div>
+  <div id="result" style="margin-top: 20px;"></div>
+
   <script>
+    const startButton = document.getElementById('start-camera');
+    const snapButton = document.getElementById('snap');
     const video = document.getElementById('video');
     const canvas = document.getElementById('canvas');
-    const ctx = canvas.getContext('2d');
     const resultDiv = document.getElementById('result');
-    const startBtn = document.getElementById('start-camera');
-    const snapBtn = document.getElementById('snap');
+    const ctx = canvas.getContext('2d');
 
-    // A4 size at 150 dpi
     const dpi = 150;
     const mmToInch = 0.0393701;
     const a4WidthPx = Math.round(210 * mmToInch * dpi);
@@ -51,51 +30,36 @@
     canvas.width = a4WidthPx;
     canvas.height = a4HeightPx;
 
-    // Try rear camera, fallback if unavailable
-    let stream;
-
-    async function startCamera() {
+    startButton.addEventListener('click', async () => {
       try {
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: { exact: "environment" } },
+        // Try rear camera
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { exact: 'environment' } },
           audio: false
         });
         video.srcObject = stream;
-        snapBtn.disabled = false;
-        startBtn.disabled = true;
-      } catch (err) {
-        // Fallback if exact facingMode fails
+        video.style.display = 'block';
+        snapButton.style.display = 'inline-block';
+        startButton.style.display = 'none';
+      } catch (error) {
+        // Fallback to any camera
         try {
-          stream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: "environment" },
+          const fallbackStream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'environment' },
             audio: false
           });
-          video.srcObject = stream;
-          snapBtn.disabled = false;
-          startBtn.disabled = true;
-        } catch (err2) {
-          console.error('Erro ao acessar a câmera traseira:', err2);
-          resultDiv.textContent = 'Erro ao acessar a câmera traseira: ' + err2.message;
+          video.srcObject = fallbackStream;
+          video.style.display = 'block';
+          snapButton.style.display = 'inline-block';
+          startButton.style.display = 'none';
+        } catch (err) {
+          console.error('Erro ao acessar a câmera:', err);
+          resultDiv.textContent = 'Erro ao acessar a câmera: ' + err.message;
         }
       }
-    }
+    });
 
-    startBtn.addEventListener('click', startCamera);
-
-    snapBtn.addEventListener('click', async () => {
-      if (!stream) {
-        resultDiv.textContent = 'Câmera não iniciada.';
-        return;
-      }
-
-      // Wait for video metadata to load for dimensions
-      if (video.videoWidth === 0 || video.videoHeight === 0) {
-        resultDiv.textContent = 'Aguardando a câmera iniciar...';
-        return;
-      }
-
-    document.getElementById('snap').addEventListener('click', async () => {
-      // Center image on A4 canvas
+    snapButton.addEventListener('click', async () => {
       const videoRatio = video.videoWidth / video.videoHeight;
       const canvasRatio = canvas.width / canvas.height;
 
@@ -119,7 +83,6 @@
       const base64Image = canvas.toDataURL('image/jpeg').split(',')[1];
 
       try {
-        resultDiv.textContent = 'Enviando imagem para análise...';
         const response = await fetch('https://backend-natal-solidario.onrender.com/analyze', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -127,25 +90,16 @@
         });
 
         const result = await response.json();
-
         resultDiv.innerHTML = '';
 
-        // If the result is an object (not plain text), show input fields
         let parsed = result;
 
-        // If Gemini returns a single string instead of a parsed object
-        if (typeof result === 'string') {
-          let cleaned = result.trim();
-
-          // Attempt to extract JSON-like content
+        // Handle response as string or object
+        if (typeof parsed === 'string') {
+          let cleaned = parsed.trim();
           const match = cleaned.match(/\{[\s\S]*\}/);
-          if (match) {
-            cleaned = match[0];
-          }
-
-          // Replace \n with a space (important for malformed JSON)
+          if (match) cleaned = match[0];
           cleaned = cleaned.replace(/\\n|[\n\r]/g, ' ');
-
           try {
             parsed = JSON.parse(cleaned);
           } catch (e) {
@@ -159,9 +113,10 @@
           label.textContent = key + ': ';
           const input = document.createElement('input');
           input.type = 'text';
-          input.value = (parsed[key] === null || parsed[key] === "null") ? '' : String(parsed[key]).replace(/\n/g, ' ');
           input.id = key;
+          input.value = (parsed[key] === null || parsed[key] === "null") ? '' : String(parsed[key]).replace(/\n/g, ' ');
           label.htmlFor = key;
+
           resultDiv.appendChild(label);
           resultDiv.appendChild(input);
           resultDiv.appendChild(document.createElement('br'));
