@@ -26,20 +26,47 @@
     canvas.height = a4HeightPx;
 
     // Try rear camera, fallback if unavailable
-    navigator.mediaDevices.getUserMedia({
-      video: { facingMode: { exact: "environment" } }
-    }).then(stream => {
-      video.srcObject = stream;
-    }).catch(() => {
-      return navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment" }
-      });
-    }).then(stream => {
-      video.srcObject = stream;
-    }).catch(err => {
-      console.error('Erro ao acessar a câmera traseira:', err);
-      resultDiv.textContent = 'Erro ao acessar a câmera traseira: ' + err.message;
-    });
+    let stream;
+
+    async function startCamera() {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { exact: "environment" } },
+          audio: false
+        });
+        video.srcObject = stream;
+        snapBtn.disabled = false;
+        startBtn.disabled = true;
+      } catch (err) {
+        // Fallback if exact facingMode fails
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: "environment" },
+            audio: false
+          });
+          video.srcObject = stream;
+          snapBtn.disabled = false;
+          startBtn.disabled = true;
+        } catch (err2) {
+          console.error('Erro ao acessar a câmera traseira:', err2);
+          resultDiv.textContent = 'Erro ao acessar a câmera traseira: ' + err2.message;
+        }
+      }
+    }
+
+    startBtn.addEventListener('click', startCamera);
+
+    snapBtn.addEventListener('click', async () => {
+      if (!stream) {
+        resultDiv.textContent = 'Câmera não iniciada.';
+        return;
+      }
+
+      // Wait for video metadata to load for dimensions
+      if (video.videoWidth === 0 || video.videoHeight === 0) {
+        resultDiv.textContent = 'Aguardando a câmera iniciar...';
+        return;
+      }
 
     document.getElementById('snap').addEventListener('click', async () => {
       // Center image on A4 canvas
