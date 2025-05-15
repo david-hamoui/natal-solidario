@@ -5,9 +5,9 @@
 </head>
 <body>
   <h1>Tirar a foto</h1>
-  <video id="video" width="320" height="240" autoplay></video>
+  <video id="video" width="297" height="420" autoplay></video>
   <button id="snap">CAPTURAR</button>
-  <canvas id="canvas" width="320" height="240" style="display:none;"></canvas>
+  <canvas id="canvas" width="297" height="420" style="display:none;"></canvas>
   
   <div id="result" style="margin-top: 20px;"></div>
 
@@ -38,7 +38,7 @@
     }
 
     document.getElementById('snap').addEventListener('click', async () => {
-      context.drawImage(video, 0, 0, 320, 240);
+      context.drawImage(video, 0, 0, 297, 420);
       const base64Image = canvas.toDataURL('image/jpeg').split(',')[1]; // remove header
 
       try {
