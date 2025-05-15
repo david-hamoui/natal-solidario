@@ -98,28 +98,24 @@
       const jsonResult = JSON.parse(result);
       console.log('Parsed JSON (jsonResult):', jsonResult);
       console.log("Raw AI response (result):", result);
-      
-      //let parsed = result;
 
-      if (typeof parsed === 'string') {
-        let cleaned = jsonResult.raw || '';
+      let parsed;
 
-        cleaned = cleaned.trim();
-        
+      if (jsonResult.error && jsonResult.raw) {
+        let cleaned = jsonResult.raw.trim();
+
         if (cleaned.startsWith('```json')) {
           cleaned = cleaned.replace(/^```json/, '').replace(/```$/, '').trim();
         } else if (cleaned.startsWith('```')) {
           cleaned = cleaned.slice(3, -3).trim();
         }
 
+        // Remove newlines and replace with space
         cleaned = cleaned.replace(/\\n|[\n\r]/g, ' ');
-        
-        cleaned = cleaned.json();
 
+        // Extract JSON object from string if wrapped with extra chars
         const match = cleaned.match(/\{[\s\S]*\}/);
         if (match) cleaned = match[0];
-
-        cleaned = cleaned.replace(/\\n|[\n\r]/g, ' ');
 
         try {
           parsed = JSON.parse(cleaned);
@@ -127,7 +123,11 @@
           resultDiv.textContent = 'Erro ao interpretar a resposta: ' + e.message;
           return;
         }
+      } else {
+        // If no error, just use the parsed result as-is
+        parsed = jsonResult;
       }
+
       
 
       for (const key in parsed) {
