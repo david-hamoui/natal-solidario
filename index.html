@@ -1,57 +1,35 @@
 <!DOCTYPE html>
-<html lang="en">
-
+<html>
 <head>
-  <meta charset="UTF-8">
-  <title>Document Scanner</title>
+  <title>Doc</title>
 </head>
-
 <body>
-  <h1>📸 Scan a Document</h1>
-  <video id="video" width="400" autoplay></video>
-  <br>
-  <button id="snap">Take Photo</button>
-  <canvas id="canvas" width="400" height="300" style="display:none;"></canvas>
-  <p id="result">Waiting...</p>
-
+  <h1>Tirar a foto</h1>
+  <video id="video" width="320" height="240" autoplay></video>
+  <button id="snap">CAPTURAR</button>
+  <canvas id="canvas" width="320" height="240" style="display:none;"></canvas>
   <script>
     const video = document.getElementById('video');
     const canvas = document.getElementById('canvas');
-    const result = document.getElementById('result');
     const context = canvas.getContext('2d');
 
-    // Ask for webcam access
-    navigator.mediaDevices.getUserMedia({ video: true })
-      .then(stream => { video.srcObject = stream; })
-      .catch(err => console.error("Error accessing camera:", err));
+    navigator.mediaDevices.getUserMedia({ video: true }).then((stream) => {
+      video.srcObject = stream;
+    });
 
-    document.getElementById('snap').addEventListener('click', () => {
-      context.drawImage(video, 0, 0, canvas.width, canvas.height);
-      canvas.toBlob(blob => {
-        const formData = new FormData();
-        formData.append('image', blob, 'capture.jpg');
+    document.getElementById('snap').addEventListener('click', async () => {
+      context.drawImage(video, 0, 0, 320, 240);
+      const base64Image = canvas.toDataURL('image/jpeg').split(',')[1]; // remove header
 
-        // 🔥 Send to local Flask server
-        fetch('http://127.0.0.1:5000/process', {
-          method: 'POST',
-          body: formData
-        })
-        .then(res => res.json())
-        .then(data => {
-          result.innerText = JSON.stringify(data, null, 2);
-        })
-        .catch(err => {
-          console.error('Upload failed:', err);
-          result.innerText = 'Error uploading image.';
-        });
-      }, 'image/jpeg');
+      const response = await fetch('https://your-backend-url.com/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: base64Image })
+      });
+
+      const result = await response.json();
+      alert(result.message || JSON.stringify(result));
     });
   </script>
 </body>
-
-
-<footer>
-    <p>&copy; 2025 David Hamoui. All rights reserved.</p>
-</footer>
-
 </html>
