@@ -31,6 +31,7 @@
     const ctx = canvas.getContext('2d');
     const sendToDbButton = document.getElementById('send-to-db-btn');
     const recaptureButton = document.getElementById('recapture');
+    const loadingDiv = document.getElementById('loading');
 
     const dpi = 150;
     const mmToInch = 0.0393701;
@@ -70,7 +71,6 @@
     });
 
   snapButton.addEventListener('click', async () => {
-    const loadingDiv = document.getElementById('loading');
     resultDiv.innerHTML = '';
     loadingDiv.style.display = 'block';
 
@@ -186,6 +186,7 @@
     sendToDbButton.style.display = 'none';
     recaptureButton.style.display = 'none';
     loadingDiv.textContent = 'Mandando para a base de dados, aguarde...';
+    loadingDiv.style.display = 'block';
 
     const inputs = resultDiv.querySelectorAll('input');
     const newJson = {};
@@ -208,6 +209,7 @@
     .then(res => res.json())
     .then(data => {
       loadingDiv.textContent = 'Informações enviadas com sucesso!';
+      loadingDiv.style.display = 'block';
       sendToDbButton.style.display = 'none';
       recaptureButton.style.display = 'block';
 
@@ -215,6 +217,7 @@
     .catch(err => {
       console.error(err);
       loadingDiv.textContent = 'Erro ao enviar dados para o banco de dados, tente novamente tirar as fotos';
+      loadingDiv.style.display = 'block';
       sendToDbButton.style.display = 'none';
       recaptureButton.style.display = 'block';
     });
@@ -227,6 +230,7 @@
     recaptureButton.style.display = 'none';
     snapButton.style.display = 'inline-block'; // show capture button again
     resultDiv.textContent = '';  //erasing results
+    loadingDiv.style.display = 'none';
   });
 
   </script>
