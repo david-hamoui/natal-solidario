@@ -177,6 +177,7 @@
       recaptureButton.style.display = 'block';
     } finally {
       loadingDiv.style.display = 'none';
+      loadingDiv.textContent = '';
       video.pause() //stop video
       sendToDbButton.style.display = 'block';
       recaptureButton.style.display = 'block';
