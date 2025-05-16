@@ -133,10 +133,12 @@
       for (const key in parsed) {
         const label = document.createElement('label');
         label.textContent = key + ': ';
+
         const input = document.createElement('input');
         input.type = 'text';
         input.id = key;
         input.value = (parsed[key] === null || parsed[key] === "null") ? '' : String(parsed[key]).replace(/\n/g, ' ');
+        input.style.width = '400px';
         label.htmlFor = key;
 
         resultDiv.appendChild(label);
