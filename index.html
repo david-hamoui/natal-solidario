@@ -175,12 +175,14 @@
     } catch (err) {
       resultDiv.textContent = 'Erro: ' + err.message;
       recaptureButton.style.display = 'block';
+      recaptureButton.textContent = 'Recapturar fotos';
     } finally {
       loadingDiv.style.display = 'none';
       loadingDiv.textContent = '';
       video.pause() //stop video
       sendToDbButton.style.display = 'block';
       recaptureButton.style.display = 'block';
+      recaptureButton.textContent = 'Recapturar fotos';
     }
   });
 
@@ -214,7 +216,7 @@
       loadingDiv.style.display = 'block';
       sendToDbButton.style.display = 'none';
       recaptureButton.style.display = 'block';
-
+      recaptureButton.textContent = 'Capturar mais fotos';
     })
     .catch(err => {
       console.error(err);
@@ -222,6 +224,7 @@
       loadingDiv.style.display = 'block';
       sendToDbButton.style.display = 'none';
       recaptureButton.style.display = 'block';
+      recaptureButton.textContent = 'Recapturar fotos';
     });
   });
 
