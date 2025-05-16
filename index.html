@@ -14,6 +14,12 @@
   <canvas id="canvas" style="display:none;"></canvas>
   <div id="loading" style="display: none; color: blue; font-weight: bold; font-size: 18px;">Processando a imagem, aguarde até 1 minuto...</div>
   <div id="result" style="margin-top: 20px;"></div>
+  <button id="send-to-db-btn" style="display: none; margin-top: 20px;">
+  Enviar para banco de dados
+  </button>
+  <button id="recapture" style="display: none; margin-top: 20px;">
+  Recapturar fotos
+  </button>
 
   <script>
     let firstImageBase64 = null;
@@ -23,6 +29,8 @@
     const canvas = document.getElementById('canvas');
     const resultDiv = document.getElementById('result');
     const ctx = canvas.getContext('2d');
+    const sendToDbButton = document.getElementById('send-to-db-btn');
+    const recaptureButton = document.getElementById('recapture');
 
     const dpi = 150;
     const mmToInch = 0.0393701;
@@ -165,16 +173,49 @@
 
     } catch (err) {
       resultDiv.textContent = 'Erro: ' + err.message;
+      recaptureButton.style.display = 'block';
     } finally {
       loadingDiv.style.display = 'none';
-      snapButton.style.display = 'inline-block'; // show capture button again
-      video.play() //start video again
-      firstImageBase64 = null;
+      video.pause() //stop video
+      sendToDbButton.style.display = 'block';
+      recaptureButton.style.display = 'block';
     }
   });
+
+  sendToDbButton.addEventListener('click', () => {
+    fetch('/save-to-sheet', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(combinedResult)
+    })
+    .then(res => res.json())
+    .then(data => {
+      alert('Informações enviadas com sucesso!');
+      sendToDbButton.style.display = 'none';
+      recaptureButton.style.display = 'block';
+
+    })
+    .catch(err => {
+      console.error(err);
+      alert('Erro ao enviar dados para o banco, tente novamente tirar as fotos');
+      sendToDbButton.style.display = 'none';
+      recaptureButton.style.display = 'block';
+    });
+  });
+
+  recaptureButton.addEventListener('click', () => {
+    video.play()
+    firstImageBase64 = null;
+    sendToDbButton.style.display = 'none';
+    recaptureButton.style.display = 'none';
+    snapButton.style.display = 'inline-block'; // show capture button again
+  });
+
   </script>
 <footer style="text-align: center; padding: 10px; font-size: 0.9em; color: #777;">
-  Versão 1.0.0
+  Versão 1.1.0
 </footer>
 </body>
 </html>
