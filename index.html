@@ -12,7 +12,7 @@
   <button id="snap" style="display:none;">Capturar</button>
 
   <canvas id="canvas" style="display:none;"></canvas>
-  <div id="loading" style="display: none; color: blue; font-weight: bold; font-size: 18px;">Processando a imagem, aguarde até 1 minuto...</div>
+  <div id="loading" style="display: none; color: blue; font-weight: bold; font-size: 15px;">Processando a imagem, aguarde até 1 minuto...</div>
   <div id="result" style="margin-top: 20px;"></div>
   <button id="send-to-db-btn" style="display: none; margin-top: 20px;">
   Enviar para banco de dados
@@ -183,23 +183,38 @@
   });
 
   sendToDbButton.addEventListener('click', () => {
+    sendToDbButton.style.display = 'none';
+    recaptureButton.style.display = 'none';
+    loadingDiv.textContent = 'Mandando para a base de dados, aguarde...';
+
+    const inputs = resultDiv.querySelectorAll('input');
+    const newJson = {};
+
+    inputs.forEach(input => {
+      const key = input.id; // the key is stored in the input's id attribute
+      const value = input.value.trim();
+      newJson[key] = value === '' ? null : value; // convert empty strings back to null
+    });
+
+    console.log(newJson);
+
     fetch('/save-to-sheet', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify(combinedResult)
+      body: JSON.stringify(newJson)
     })
     .then(res => res.json())
     .then(data => {
-      alert('Informações enviadas com sucesso!');
+      loadingDiv.textContent = 'Informações enviadas com sucesso!';
       sendToDbButton.style.display = 'none';
       recaptureButton.style.display = 'block';
 
     })
     .catch(err => {
       console.error(err);
-      alert('Erro ao enviar dados para o banco, tente novamente tirar as fotos');
+      loadingDiv.textContent = 'Erro ao enviar dados para o banco de dados, tente novamente tirar as fotos';
       sendToDbButton.style.display = 'none';
       recaptureButton.style.display = 'block';
     });
@@ -211,6 +226,7 @@
     sendToDbButton.style.display = 'none';
     recaptureButton.style.display = 'none';
     snapButton.style.display = 'inline-block'; // show capture button again
+    resultDiv.textContent = '';  //erasing results
   });
 
   </script>
