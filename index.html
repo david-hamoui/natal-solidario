@@ -16,6 +16,7 @@
   <div id="result" style="margin-top: 20px;"></div>
 
   <script>
+    let firstImageBase64 = null;
     const startButton = document.getElementById('start-camera');
     const snapButton = document.getElementById('snap');
     const video = document.getElementById('video');
@@ -90,11 +91,23 @@
 
     const base64Image = canvas.toDataURL('image/jpeg').split(',')[1];
 
+    // First image — store and wait for second
+    if (!firstImageBase64) {
+      firstImageBase64 = base64Image;
+      resultDiv.textContent = 'Primeira imagem capturada. Capture mais uma.';
+      loadingDiv.style.display = 'none';
+      video.play(); // Unfreeze video
+      return;
+    }
+
     try {
       const response = await fetch('https://backend-natal-solidario.onrender.com/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image: base64Image })
+        body: JSON.stringify({
+          image1: firstImageBase64,
+          image2: base64Image
+        })
       });
 
       const result = await response.text();
@@ -141,7 +154,7 @@
         input.type = 'text';
         input.id = key;
         input.value = (parsed[key] === null || parsed[key] === "null") ? '' : String(parsed[key]).replace(/\n/g, ' ');
-        input.style.width = '400px';
+        input.style.width = '300px';
         label.htmlFor = key;
 
         resultDiv.appendChild(label);
@@ -155,6 +168,7 @@
       loadingDiv.style.display = 'none';
       snapButton.style.display = 'inline-block'; // show capture button again
       video.play() //start video again
+      firstImageBase64 = null;
     }
   });
   </script>
