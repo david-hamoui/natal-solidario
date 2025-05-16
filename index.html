@@ -65,6 +65,9 @@
     resultDiv.innerHTML = '';
     loadingDiv.style.display = 'block';
 
+    snapButton.style.display = 'none';
+    video.pause();
+
     const videoRatio = video.videoWidth / video.videoHeight;
     const canvasRatio = canvas.width / canvas.height;
 
@@ -150,6 +153,7 @@
       resultDiv.textContent = 'Erro: ' + err.message;
     } finally {
       loadingDiv.style.display = 'none';
+      snapButton.style.display = 'inline-block'; // show capture button again
     }
   });
   </script>
