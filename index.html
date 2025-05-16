@@ -12,7 +12,7 @@
   <button id="snap" style="display:none;">Capturar</button>
 
   <canvas id="canvas" style="display:none;"></canvas>
-  <div id="loading" style="display: none; color: blue; font-weight: bold; font-size: 15px;">Processando a imagem, aguarde até 1 minuto...</div>
+  <div id="loading" style="display: none; color: blue; font-weight: bold; font-size: 15px;"></div>
   <div id="result" style="margin-top: 20px;"></div>
   <button id="send-to-db-btn" style="display: none; margin-top: 20px;">
   Enviar para banco de dados
@@ -71,7 +71,8 @@
     });
 
   snapButton.addEventListener('click', async () => {
-    resultDiv.innerHTML = '';
+    resultDiv.innerHTML = 'Processando a imagem, aguarde até 1 minuto...';
+    loadingDiv.textContent = '';
     loadingDiv.style.display = 'block';
 
     snapButton.style.display = 'none';
