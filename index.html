@@ -3,6 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <title>Doc - Captura de Foto A4</title>
+  <style>
+    button {
+      font-size: 4vw;
+    }
+    #loading {
+      font-size: 3.5vw;
+    }
+    #result {
+      font-size: 3vw;
+    }
+  </style>
 </head>
 <body>
   <h1>Captura de Foto</h1>
@@ -13,7 +24,7 @@
   <button id="snap" style="display:none;">Capturar</button>
 
   <canvas id="canvas" style="display:none;"></canvas>
-  <div id="loading" style="display: none; color: blue; font-weight: bold; font-size: 15px;"></div>
+  <div id="loading" style="display: none; color: blue; font-weight: bold; font-size: 17px;"></div>
   <div id="result" style="margin-top: 20px;"></div>
   <button id="send-to-db-btn" style="display: none; margin-top: 20px;">
   Enviar para banco de dados
@@ -242,7 +253,7 @@
   });
 
   </script>
-<footer style="text-align: center; padding: 10px; font-size: 0.9em; color: #777;">
+<footer style="text-align: center; padding: 10px; font-size: 1.1em; color: #777;">
   Versão 0.2.13
 </footer>
 </body>
