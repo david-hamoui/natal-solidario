@@ -165,7 +165,7 @@
         input.type = 'text';
         input.id = key;
         input.value = (parsed[key] === null || parsed[key] === "null") ? '' : String(parsed[key]).replace(/\n/g, ' ');
-        input.style.width = '300px';
+        input.style.width = '400px';
         label.htmlFor = key;
 
         resultDiv.appendChild(label);
@@ -177,6 +177,7 @@
       resultDiv.textContent = 'Erro: ' + err.message;
       recaptureButton.style.display = 'block';
       recaptureButton.textContent = 'Recapturar fotos';
+      sendToDbButton.style.display = 'none';
     } finally {
       loadingDiv.style.display = 'none';
       loadingDiv.textContent = '';
@@ -242,7 +243,7 @@
 
   </script>
 <footer style="text-align: center; padding: 10px; font-size: 0.9em; color: #777;">
-  Versão 1.1.1
+  Versão 0.2.13
 </footer>
 </body>
 </html>
